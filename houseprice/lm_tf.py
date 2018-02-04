@@ -26,10 +26,10 @@ _CSV_COLUMNS = ['Id', 'MSSubClass', 'MSZoning', 'LotFrontage', 'LotArea', 'Stree
 
 #  Continus Columns 
 continus_columns = ['LotFrontage', 'LotArea', 'MasVnrArea', 'BsmtFinSF1', 'BsmtUnfSF',
-'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'BsmtFinSF2', 'Fireplaces','GarageArea', 'GarageCars',
-       'LowQualFinSF', 'GrLivArea', 'BsmtFullBath', 'BsmtHalfBath', 'FullBath',
-       'HalfBath', 'BedroomAbvGr', 'KitchenAbvGr','WoodDeckSF', 'OpenPorchSF',
-       'EnclosedPorch', '3SsnPorch', 'ScreenPorch', 'PoolArea', 'MiscVal','GarageYrBlt'
+'TotalBsmtSF', '1stFlrSF', '2ndFlrSF', 'BsmtFinSF2','GarageArea',
+       'LowQualFinSF', 'GrLivArea',
+       'BedroomAbvGr','WoodDeckSF', 'OpenPorchSF',
+       'EnclosedPorch', 'ScreenPorch', 'MiscVal','GarageYrBlt'
 ]
 
 type_columns = ['LandContour', 'BsmtFinType1', 'GarageFinish', 
@@ -41,15 +41,24 @@ type_columns = ['LandContour', 'BsmtFinType1', 'GarageFinish',
 'YearRemodAdd',  'MasVnrType', 'FireplaceQu', 'Condition2', 'LotShape', 
 'PavedDrive', 'MiscFeature', 'HouseStyle', 'Foundation', 'HeatingQC', 
 'MSSubClass', 'MoSold',  'OverallCond', 'OverallQual', 'TotRmsAbvGrd',
-'CentralAir', 'SaleType', 'Heating', 'BsmtCond', 'GarageCond', 'Functional']
+'CentralAir', 'SaleType', 'Heating', 'BsmtCond', 'GarageCond', 'Functional',
+'KitchenAbvGr', 'GarageCars', 'HalfBath', '3SsnPorch', 'PoolArea', 'BsmtFullBath', 'BsmtHalfBath', 'FullBath',
+'Fireplaces']
 
 
-_DEFAULT_VALUES= [[''], [''], [''], [0.0], [0.0], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [''], [0.0], [''], [''], [''], [''], [''], [''], [''], [0.0], [''], [0.0], [0.0], [0.0], [''], [''], [''], [''], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [''], [''], [''], [0.0], [''], [''], [0.0], [''], [0.0], [0.0], [''], [''], [''], [0.0], [0.0], [0.0], [0.0], [0.0], [0.0], [''], [''], [''], [0.0], [''], [''], [''], [''], ['']]
+_DEFAULT_VALUES= [[''], [''], [''], [0.0], [0], [''], [''], [''], [''], [''], 
+[''], [''], [''], [''], [''], [''], [''], [''], [''], [''], 
+[''], [''], [''], [''], [''], [''], [0.0], [''], [''], [''], 
+[''], [''], [''], [''], [0], [''], [0], [0], [0], [''], 
+[''], [''], [''], [0], [0], [0], [0], [''], [''], [''], 
+[''], [0], [''], [''], [''], [''], [''], [''], [''], [0.0], 
+[''], [''], [0], [''], [''], [''], [0], [0], [0], [''], 
+[0], [''], [''], [''], [''], [0], [''], [''], [''], [''], ['']]
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument(
-    '--model_dir', type=str, default='/Users/zhangyong/Downloads/tmp',
+    '--model_dir', type=str, default='/home/zhangyong/Downloads/house_model',
     help='Base directory for the model.')
 
 parser.add_argument(
@@ -63,33 +72,29 @@ parser.add_argument(
     '--batch_size', type=int, default=40, help='Number of examples per batch.')
 
 parser.add_argument(
-    '--train_data', type=str, default='/Users/zhangyong/projects/kaggle_codes/houseprice/data/train_data.csv',
+    '--train_data', type=str, default='/home/zhangyong/projects/kaggle_codes/houseprice/data/train_data.csv',
     help='Path to the training data.')
 
 parser.add_argument(
-    '--test_data', type=str, default='/Users/zhangyong/projects/kaggle_codes/houseprice/data/test_data.csv',
+    '--test_data', type=str, default='/home/zhangyong/projects/kaggle_codes/houseprice/data/test_data.csv',
     help='Path to the test data.')
 
 
 def columnValues(input_path):
-    a_path = '/Users/zhangyong/projects/kaggle_codes/houseprice/data/train.csv'
+    a_path = '/home/zhangyong/projects/kaggle_codes/houseprice/data/train.csv'
     dat = pd.read_csv(a_path)
     column_values = {}
     for column in type_columns:
         column_values[column] = dat[column].dropna().apply(lambda x: str(x)).unique()
     return column_values
 
-
-
 def build_model_columns(type_values):
     base_columns = []
     for column in continus_columns:
         feature = tf.feature_column.numeric_column(column)
-        print('yonzhang:' + column)
         base_columns.append(feature)
 
     for column in type_columns:
-        print('zhangyong:' + column)
         feature = tf.feature_column.categorical_column_with_vocabulary_list(
             column, type_values[column]
         )
@@ -104,7 +109,7 @@ def build_estimator():
     run_config = tf.estimator.RunConfig().replace(
         session_config = tf.ConfigProto(device_count={'GPU': 0})
     )
-    return tf.estimator.LinearRegressor(model_dir=FLAGS.model_dir, feature_columns=columns)
+    return tf.estimator.LinearRegressor(model_dir=FLAGS.model_dir, feature_columns=columns, config=run_config)
 
 
 def input_fn(data_file, num_epochs, shuffle, batch_size):
@@ -114,12 +119,10 @@ def input_fn(data_file, num_epochs, shuffle, batch_size):
         features = dict(zip(_CSV_COLUMNS, columns))
         features.pop('Id')
         labels = features.pop('SalePrice')
-        print(labels)
-        return features, labels
+        return features, tf.string_to_number(labels, tf.int32, name="label_cast") 
 
     dataset = tf.data.TextLineDataset(data_file)
     dataset = dataset.map(parse_csv, num_parallel_calls=5).repeat(num_epochs).batch(batch_size)
-
     iterator = dataset.make_one_shot_iterator()
     features, labels = iterator.get_next()
     return features, labels
@@ -128,10 +131,8 @@ def input_fn(data_file, num_epochs, shuffle, batch_size):
 def main(unused_argv):
     model = build_estimator()
     for n in range(FLAGS.train_epochs):
-        model.train(input_fn=lambda: input_fn(FLAGS.train_data, 
-        FLAGS.epochs_per_eval, True, FLAGS.batch_size))
-        result = model.evaluate(input_fn=lambda: input_fn(
-        FLAGS.test_data, 1, False, FLAGS.batch_size))
+        model.train(input_fn=lambda: input_fn(FLAGS.train_data, FLAGS.epochs_per_eval, True, FLAGS.batch_size))
+        results = model.evaluate(input_fn=lambda: input_fn(FLAGS.test_data, 1, False, FLAGS.batch_size))
 
         print('Results at epoch', (n + 1) * FLAGS.epochs_per_eval)
         print('-' * 60)
