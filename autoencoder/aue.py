@@ -5,6 +5,11 @@ from skimage import transform
 import matplotlib.pyplot as plt
 from tensorflow.examples.tutorials.mnist import input_data
 
+
+batch_size = 500  # Number of samples in each batch
+epoch_num = 5     # Number of epochs to train the network
+lr = 0.001        # Learning rate
+
 def autoencoder(inputs):
     net = lays.conv2d(inputs, 32, [5,5], stride=2, padding='SAME')
     net = lays.conv2d(net, 16, [5,5], stride=2, padding='SAME')
@@ -27,13 +32,8 @@ ae_inputs = tf.placeholder(tf.float32, (None, 32, 32, 1))
 ae_output =  autoencoder(ae_inputs)
 
 loss = tf.reduce_mean(tf.square(ae_output - ae_inputs))
-train_op = tf.train.AdamOptimizer(learning_rate=0.1).minimize(loss)
+train_op = tf.train.AdamOptimizer(learning_rate=lr).minimize(loss)
 init = tf.global_variables_initializer()
-
-
-batch_size = 500  # Number of samples in each batch
-epoch_num = 5     # Number of epochs to train the network
-lr = 0.001        # Learning rate
 
 # read MNIST dataset
 mnist = input_data.read_data_sets("MNIST_data", one_hot=True)
